@@ -1,0 +1,83 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="cancel()">Cancel</ion-button>
+    </ion-buttons>
+    <ion-title>{{ expense ? 'Edit' : 'New' }} {{ kind === 'lent' ? 'loan' : 'expense' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong (click)="save()" [disabled]="!valid">Save</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-segment [(ngModel)]="kind">
+    <ion-segment-button value="expense"><ion-label>Expense</ion-label></ion-segment-button>
+    <ion-segment-button value="lent"><ion-label>Lent</ion-label></ion-segment-button>
+  </ion-segment>
+
+  <div class="amount">
+    <ion-input
+      type="number"
+      inputmode="decimal"
+      placeholder="0.00"
+      [(ngModel)]="amount"
+      [autofocus]="!expense"
+      aria-label="Amount"
+    ></ion-input>
+    <span class="currency">{{ service.currency() }}</span>
+  </div>
+
+  @if (kind === 'expense') {
+  <h3 class="label">Category</h3>
+  <div class="categories">
+    @for (c of categories; track c.name) {
+      <button
+        type="button"
+        class="chip"
+        [class.selected]="c.name === category"
+        [style.--cat]="c.color"
+        (click)="category = c.name"
+      >
+        <ion-icon [name]="c.icon"></ion-icon>
+        <span>{{ c.name }}</span>
+      </button>
+    }
+  </div>
+  } @else {
+    <p class="hint">Counts as spending until it's paid back. Money you get back is taken off this entry.</p>
+  }
+
+  <ion-list inset>
+    @if (kind === 'lent') {
+      <ion-item>
+        <ion-input label="Lent to" labelPlacement="stacked" placeholder="Name" [(ngModel)]="lentTo" autocapitalize="words"></ion-input>
+      </ion-item>
+      @if (expense) {
+        <ion-item>
+          <ion-input
+            label="Amount returned so far"
+            labelPlacement="stacked"
+            type="number"
+            inputmode="decimal"
+            placeholder="0"
+            [(ngModel)]="returned"
+          ></ion-input>
+        </ion-item>
+      }
+    }
+    <ion-item>
+      <ion-input label="Note" labelPlacement="stacked" placeholder="What was it for?" [(ngModel)]="note"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-label>Date</ion-label>
+      <ion-datetime-button datetime="expense-date"></ion-datetime-button>
+    </ion-item>
+  </ion-list>
+
+  <ion-modal [keepContentsMounted]="true">
+    <ng-template>
+      <ion-datetime id="expense-date" presentation="date" [(ngModel)]="date" [showDefaultButtons]="true"></ion-datetime>
+    </ng-template>
+  </ion-modal>
+</ion-content>

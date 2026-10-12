@@ -1,0 +1,48 @@
+<ion-content class="ion-padding">
+  <div class="wrap">
+    <img src="apple-touch-icon.png" alt="" class="logo" />
+    <h1>Expenses</h1>
+    <p class="sub">Sign in to sync your expenses</p>
+
+    <form (ngSubmit)="submit()">
+      <ion-list inset>
+        <ion-item>
+          <ion-input
+            label="Email"
+            labelPlacement="stacked"
+            type="email"
+            name="email"
+            autocomplete="username"
+            inputmode="email"
+            [(ngModel)]="email"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            label="Password"
+            labelPlacement="stacked"
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            [(ngModel)]="password"
+            (keyup.enter)="submit()"
+          >
+            <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+          </ion-input>
+        </ion-item>
+      </ion-list>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+
+      <ion-button expand="block" type="submit" [disabled]="busy() || !email || !password">
+        @if (busy()) {
+          <ion-spinner name="crescent"></ion-spinner>
+        } @else {
+          Sign in
+        }
+      </ion-button>
+    </form>
+  </div>
+</ion-content>

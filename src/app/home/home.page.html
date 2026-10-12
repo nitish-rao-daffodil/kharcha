@@ -1,0 +1,148 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Expenses</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="openMenu()" aria-label="Options">
+        <ion-icon slot="icon-only" name="ellipsis-horizontal-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Expenses</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="month-nav">
+    <ion-button fill="clear" (click)="shiftMonth(-1)" aria-label="Previous month">
+      <ion-icon slot="icon-only" name="chevron-back"></ion-icon>
+    </ion-button>
+    <span>{{ monthLabel() }}</span>
+    <ion-button fill="clear" (click)="shiftMonth(1)" [disabled]="isCurrentMonth()" aria-label="Next month">
+      <ion-icon slot="icon-only" name="chevron-forward"></ion-icon>
+    </ion-button>
+  </div>
+
+  @if (!service.loaded()) {
+    <div class="loading"><ion-spinner name="crescent"></ion-spinner></div>
+  } @else {
+  <div class="summary">
+    <div class="total-label">Spent this month</div>
+    <div class="total">{{ service.formatMoney(total()) }}</div>
+
+    @if (byCategory().length) {
+      <div class="bar">
+        @for (c of byCategory(); track c.name) {
+          <div [style.width.%]="c.pct" [style.background]="c.color"></div>
+        }
+      </div>
+      <div class="legend">
+        @for (c of byCategory(); track c.name) {
+          <div class="legend-row">
+            <span class="dot" [style.background]="c.color"></span>
+            <span class="name">{{ c.name }}</span>
+            <span class="pct">{{ c.pct | number: '1.0-0' }}%</span>
+            <span class="amt">{{ service.formatMoney(c.amount) }}</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  @if (service.pendingLoans().length) {
+    <ion-list inset class="loans">
+      <ion-list-header>
+        <ion-label>To get back</ion-label>
+        <ion-note class="day-total owed">{{ service.formatMoney(service.totalOwed()) }}</ion-note>
+      </ion-list-header>
+      @for (loan of service.pendingLoans(); track loan.id) {
+        <ion-item>
+          <ion-label>
+            <h2>{{ loan.lentTo }}</h2>
+            <p>
+              {{ dayLabel(loan.date) }}
+              @if (loan.returned) {
+                · {{ service.formatMoney(loan.returned) }} of {{ service.formatMoney(loan.amount) }} back
+              }
+            </p>
+          </ion-label>
+          <ion-note slot="end" class="amount">{{ service.formatMoney(effective(loan)) }}</ion-note>
+          <ion-button slot="end" size="small" fill="outline" color="success" (click)="gotBack(loan)">Got back</ion-button>
+        </ion-item>
+      }
+    </ion-list>
+  }
+
+  @for (day of days(); track day.date) {
+    <ion-list inset>
+      <ion-list-header>
+        <ion-label>{{ dayLabel(day.date) }}</ion-label>
+        <ion-note class="day-total">{{ service.formatMoney(day.total) }}</ion-note>
+      </ion-list-header>
+      @for (e of day.items; track e.id) {
+        <ion-item-sliding>
+          <ion-item button detail="false" (click)="openForm(e)">
+            <div class="cat-icon" slot="start" [style.--cat]="service.category(e.category).color">
+              <ion-icon [name]="service.category(e.category).icon"></ion-icon>
+            </div>
+            <ion-label>
+              @if (e.lentTo) {
+                <h2>Lent to {{ e.lentTo }}</h2>
+                <p>
+                  @if (effective(e) === 0) {
+                    <span class="returned">Paid back in full</span>
+                  } @else if (e.returned) {
+                    {{ service.formatMoney(e.returned) }} paid back
+                  } @else {
+                    Not paid back yet
+                  }
+                  @if (e.note) {
+                    · {{ e.note }}
+                  }
+                </p>
+              } @else {
+                <h2>{{ e.note || e.category }}</h2>
+                @if (e.note) {
+                  <p>{{ e.category }}</p>
+                }
+              }
+            </ion-label>
+            <div slot="end" class="amount-col">
+              <ion-note class="amount">{{ service.formatMoney(effective(e)) }}</ion-note>
+              @if (e.lentTo && e.returned) {
+                <s class="original">{{ service.formatMoney(e.amount) }}</s>
+              }
+            </div>
+          </ion-item>
+          <ion-item-options side="end">
+            @if (e.lentTo && effective(e) > 0) {
+              <ion-item-option color="success" (click)="gotBack(e)">Got back</ion-item-option>
+            }
+            <ion-item-option color="danger" (click)="confirmDelete(e)">
+              <ion-icon slot="icon-only" name="trash"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      }
+    </ion-list>
+  } @empty {
+    <div class="empty">
+      <ion-icon name="wallet-outline"></ion-icon>
+      <p>No expenses in {{ monthLabel() }}.</p>
+      <p>Tap <strong>+</strong> to add one.</p>
+    </div>
+  }
+
+  }
+
+  <input id="restore-input" type="file" accept="application/json,.json" hidden (change)="restore($event)" />
+
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button (click)="openForm()" aria-label="Add expense">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
